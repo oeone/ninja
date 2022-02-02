@@ -501,7 +501,7 @@ module.exports = class User {
   }
 //////////////////////////////////////////////
   async #getWSCKCheck() {
-    const s = await api({url: `https://pan.smxy.xyz/sign`}).json();
+    const s = await api({url: `https://sign.666889.xyz/getCkSign`}).json();
     const clientVersion = s['clientVersion']
     const client = s['client']
     const sv = s['sv']
