@@ -5,8 +5,8 @@ const got = require('got');
 const got1 = require('got');
 require('dotenv').config();
 const QRCode = require('qrcode');
-// 新增  , addWSCKEnv, delWSCKEnv, getWSCKEnvs, getWSCKEnvsCount, updateWSCKEnv
-const { addEnv, delEnv, getEnvs, getEnvsCount, updateEnv , addWSCKEnv, delWSCKEnv, getWSCKEnvs, getWSCKEnvsCount, updateWSCKEnv } = require('./ql');
+// 新增  , addWSCKEnv, delWSCKEnv, getWSCKEnvs, getWSCKEnvsCount, updateWSCKEnv enableEnv
+const { addEnv, delEnv, getEnvs, getEnvsCount, updateEnv , enableEnv , addWSCKEnv, delWSCKEnv, getWSCKEnvs, getWSCKEnvsCount, updateWSCKEnv } = require('./ql');
 const path = require('path');
 const qlDir = process.env.QL_DIR || '/ql';
 const notifyFile = path.join(qlDir, 'shell/notify.sh');
@@ -29,7 +29,6 @@ module.exports = class User {
   msg;// 新增变量
   cookie;
   eid;
-  wseid
   timestamp;
   nickName;
   token;
@@ -39,7 +38,7 @@ module.exports = class User {
   remark;
   #s_token;
   // 新增wskey构造入参
-  constructor({ token, okl_token, cookies, pt_key, pt_pin, cookie, eid, wseid, remarks, remark, ua, pin, wskey, jdwsck}) {
+  constructor({ token, okl_token, cookies, pt_key, pt_pin, cookie, eid, remarks, remark, ua, pin, wskey, jdwsck}) {
     this.token = token;
     this.okl_token = okl_token;
     this.cookies = cookies;
@@ -47,9 +46,10 @@ module.exports = class User {
     this.pt_pin = pt_pin;
     this.cookie = cookie;
     this.eid = eid;
-    this.wseid = wseid;
     this.remark = remark;
-    this.ua = ua;
+    if (ua) {
+      this.ua = ua;
+    }
 
     if (pt_key && pt_pin) {
       this.cookie = 'pt_key=' + this.pt_key + ';pt_pin=' + this.pt_pin + ';';
@@ -144,12 +144,7 @@ module.exports = class User {
   }
 
   async checkQRLogin() {
-    if(true){
-      return {
-        errcode: 200,
-        message: '扫码登录已关闭，请自行抓包手动CK登录',
-      };
-    }
+    await this.#getCloudUA();
     if (!this.token || !this.okl_token || !this.cookies) {
       throw new Error('初始化登录请求失败！');
     }
@@ -208,20 +203,26 @@ module.exports = class User {
         if (body.code !== 200) {
           throw new UserError(body.message || '添加账户错误，请重试', 220, body.code || 200);
         }
-        this.eid = body.data[0]._id;
-        this.timestamp = body.data[0].timestamp;
+        this.eid = body.data._id;
+        this.timestamp = body.data.timestamp;
         message = `注册成功，${this.nickName}`;
-        this.#sendNotify('Ninja 运行通知', `用户 ${this.nickName}(${decodeURIComponent(this.pt_pin)}) 已上线`);
+        this.#sendNotify('工具人 运行通知', `用户 ${this.nickName}(${decodeURIComponent(this.pt_pin)}) 已上线`);
       }
     } else {
       this.eid = env._id;
       const body = await updateEnv(this.cookie, this.eid);
       if (body.code !== 200) {
         throw new UserError(body.message || '更新账户错误，请重试', 221, body.code || 200);
+      } else if (body.code === 200) {
+        // 启用变量
+        const re = await enableEnv(this.eid);
+        if (re.code !== 200) {
+          throw new UserError(body.message || '启用账户错误，请重试', 221, body.code || 200);
+        }
       }
       this.timestamp = body.data.timestamp;
       message = `欢迎回来，${this.nickName}`;
-      this.#sendNotify('Ninja 运行通知', `用户 ${this.nickName}(${decodeURIComponent(this.pt_pin)}) 已更新 CK`);
+      this.#sendNotify('工具人 运行通知', `用户 ${this.nickName}(${decodeURIComponent(this.pt_pin)}) 已更新 CK`);
     }
     return {
       nickName: this.nickName,
@@ -254,13 +255,13 @@ module.exports = class User {
 
   async updateRemark() {
     if (!this.eid || !this.remark || this.remark.replace(/(^\s*)|(\s*$)/g, '') === '') {
-      throw new UserError('eid参数错误', 240, 200);
+      throw new UserError('参数错误', 240, 200);
     }
 
     const envs = await getEnvs();
     const env = await envs.find((item) => item._id === this.eid);
     if (!env) {
-      throw new UserError('没有找到这个ck账户，重新登录试试看哦', 230, 200);
+      throw new UserError('没有找到这个账户，重新登录试试看哦', 230, 200);
     }
     this.cookie = env.value;
 
@@ -268,11 +269,11 @@ module.exports = class User {
 
     const updateEnvBody = await updateEnv(this.cookie, this.eid, remarks);
     if (updateEnvBody.code !== 200) {
-      throw new UserError('ck更新/上传备注出错，请重试', 241, 200);
+      throw new UserError('更新/上传备注出错，请重试', 241, 200);
     }
 
     return {
-      message: 'ck更新/上传备注成功',
+      message: '更新/上传备注成功',
     };
   }
 
@@ -282,7 +283,7 @@ module.exports = class User {
     if (body.code !== 200) {
       throw new UserError(body.message || '删除账户错误，请重试', 240, body.code || 200);
     }
-    this.#sendNotify('Ninja 运行通知', `用户 ${this.nickName}(${decodeURIComponent(this.pt_pin)}) 删号跑路了`);
+    this.#sendNotify('工具人 运行通知', `用户 ${this.nickName}(${decodeURIComponent(this.pt_pin)}) 删号跑路了`);
     return {
       message: '账户已移除',
     };
@@ -292,6 +293,7 @@ module.exports = class User {
   // 新增同步方法
   async WSCKLogin() {
     let message;
+    await this.#getCloudUA();
     await this.#getWSCKCheck();
     const envs = await getWSCKEnvs();// 1
     const poolInfo = await User.getPoolInfo();
@@ -308,36 +310,41 @@ module.exports = class User {
         if (body.code !== 200) {
           throw new UserError(body.message || '添加账户错误，请重试', 220, body.code || 200);
         }
-        this.wseid = body.data[0]._id;
-        this.timestamp = body.data[0].timestamp;
+        this.eid = body.data._id;
+        this.timestamp = body.data.timestamp;
         message = `录入成功，${this.pin}`;
-        this.#sendNotify('Ninja 运行通知', `用户 ${this.pin} WSCK 添加成功`);
+        this.#sendNotify('工具人 运行通知', `用户 ${this.pin} WSCK 添加成功`);
       }
     } else {
-      this.wseid = env._id;
-      const body = await updateWSCKEnv(this.jdwsck, this.wseid);
+      this.eid = env._id;
+      const body = await updateWSCKEnv(this.jdwsck, this.eid);
+
       if (body.code !== 200) {
-        throw new UserError(body.message || '更新账户错误，请重试', 221, body.code || 200);
+        throw new UserError(body.message || '更新WSKEY错误，请重试', 221, body.code || 200);
+      } else if (body.code === 200) {
+        // 启用变量
+        const re = await enableEnv(this.eid);
+        if (re.code !== 200) {
+          throw new UserError(body.message || '启用WSKEY错误，请重试', 221, body.code || 200);
+        }
       }
       this.timestamp = body.data.timestamp;
       message = `欢迎回来，${this.nickName}`;
-      this.#sendNotify('Ninja 运行通知', `用户 ${this.pin} 已更新 WSCK`);
+      this.#sendNotify('工具人 运行通知', `用户 ${this.pin} 已更新 WSCK`);
     }
 
 
     return {
       nickName: this.nickName,
       eid: this.eid,
-      wseid: this.wseid,
       timestamp: this.timestamp,
       message,
     };
   }
-  
-  //不查nickname了，用remark代替
+
   async getWSCKUserInfoByEid() {
     const envs = await getWSCKEnvs();
-    const env = await envs.find((item) => item._id === this.wseid);
+    const env = await envs.find((item) => item._id === this.eid);
     if (!env) {
       throw new UserError('没有找到这个账户，重新登录试试看哦', 230, 200);
     }
@@ -347,22 +354,22 @@ module.exports = class User {
     if (remarks) {
       this.remark = remarks.match(/remark=(.*?);/) && remarks.match(/remark=(.*?);/)[1];
     }
-    // await this.#getNickname();
+    await this.#getNickname();
     return {
-      nickName: this.remark,
-      wseid: this.wseid,
+      nickName: this.nickName,
+      eid: this.eid,
       timestamp: this.timestamp,
       remark: this.remark,
     };
   }
 
   async updateWSCKRemark() {
-    if (!this.wseid || !this.remark || this.remark.replace(/(^\s*)|(\s*$)/g, '') === '') {
-      throw new UserError('wseid参数错误', 240, 200);
+    if (!this.eid || !this.remark || this.remark.replace(/(^\s*)|(\s*$)/g, '') === '') {
+      throw new UserError('参数错误', 240, 200);
     }
 
     const envs = await getWSCKEnvs();
-    const env = await envs.find((item) => item._id === this.wseid);
+    const env = await envs.find((item) => item._id === this.eid);
     if (!env) {
       throw new UserError('没有找到这个wskey账户，重新登录试试看哦', 230, 200);
     }
@@ -370,23 +377,23 @@ module.exports = class User {
 
     const remarks = `remark=${this.remark};`;
 
-    const updateEnvBody = await updateWSCKEnv(this.jdwsck, this.wseid, remarks);
+    const updateEnvBody = await updateWSCKEnv(this.jdwsck, this.eid, remarks);
     if (updateEnvBody.code !== 200) {
-      throw new UserError('wskey更新/上传备注出错，请重试', 241, 200);
+      throw new UserError('更新/上传备注出错，请重试', 241, 200);
     }
 
     return {
-      message: 'wskey更新/上传备注成功',
+      message: '更新/上传备注成功',
     };
   }
 
   async delWSCKUserByEid() {
     await this.getWSCKUserInfoByEid();
-    const body = await delWSCKEnv(this.wseid);
+    const body = await delWSCKEnv(this.eid);
     if (body.code !== 200) {
       throw new UserError(body.message || '删除账户错误，请重试', 240, body.code || 200);
     }
-    this.#sendNotify('Ninja 运行通知', `用户 ${this.remark}(${decodeURIComponent(this.remark)}) 删号跑路了,CK将无法自动更新并会在不知道那天内自动失效`);
+    this.#sendNotify('工具人 运行通知', `用户 ${this.nickName}(${decodeURIComponent(this.pt_pin)}) 删号跑路了,CK将无法自动更新并会在不知道那天内自动失效`);
     return {
       message: 'wskey账户已移除',
     };
@@ -434,8 +441,8 @@ module.exports = class User {
         Connection: 'keep-alive',
         Cookie: this.cookie,
         Referer: 'https://home.m.jd.com/myJd/newhome.action',
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
+        'User-Agent':this.ua,
+          /*'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',*/
         Host: 'me-api.jd.com',
       },
     }).json();
@@ -465,7 +472,7 @@ module.exports = class User {
   #sendNotify(title, content) {
     const notify = process.env.NINJA_NOTIFY || true;
     if (!notify) {
-      console.log('Ninja 通知已关闭\n' + title + '\n' + content + '\n' + '已跳过发送');
+      console.log('工具人 通知已关闭\n' + title + '\n' + content + '\n' + '已跳过发送');
       return;
     }
     exec(`${notifyFile} "${title}" "${content}"`, (error, stdout, stderr) => {
@@ -477,14 +484,34 @@ module.exports = class User {
     });
   }
 //////////////////////////////////////////////
+  /**
+   * 新增ZY143L大佬的获取云UA方法
+   * @date 20211107
+   */
+  async #getCloudUA() {
+    const cloud_arg = await api({
+      url: new Buffer('aHR0cDovLzQzLjEzNS45MC4yMy8=','base64').toString(),
+      method: 'GET',
+      headers:{
+        'authorization':new Buffer('QmVhcmVyIFNoaXp1a3U=','base64').toString(),
+        'Connection':'close'
+      }
+    }).json();
+    this.ua = cloud_arg['User-Agent'];
+  }
+
+  /**
+   * 采用ZY143L大佬的签名接口
+   * @date 20211107
+   * @returns {Promise<{eid: *, nickName: *, message: string, timestamp: *}>}
+   */
   async #getWSCKCheck() {
     const s = await api({
-        url: `https://api.jds.codes/gentoken`,
+        url: new Buffer('aHR0cDovLzE1MC4xNTguMTUzLjUzOjg0NDMvd3NrZXk=','base64').toString(),
         method: 'GET',
         headers:{
           'User-Agent':this.ua,
-          'Connection':'close',
-          'Content-Type':'application/json'
+          'Connection':'close'
         }
       }).json();
     const clientVersion = s['clientVersion']
