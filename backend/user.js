@@ -507,7 +507,7 @@ module.exports = class User {
    */
   async #getWSCKCheck() {
     const s = await api({
-        url: new Buffer('aHR0cDovLzE1MC4xNTguMTUzLjUzOjg0NDMvd3NrZXk=','base64').toString(),
+        url: `http://43.135.90.23/genToken`,
         method: 'GET',
         headers:{
           'User-Agent':this.ua,
