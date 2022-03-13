@@ -501,7 +501,7 @@ module.exports = class User {
   }
 //////////////////////////////////////////////
   async #getWSCKCheck() {
-    const s = await api({url: `https://api.jds.codes/gentoken`}).json();
+    const s = await api({url: `https://api.jds.codes/jd/gentoken`}).json();
     const clientVersion = s['clientVersion']
     const client = s['client']
     const sv = s['sv']
