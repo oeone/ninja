@@ -428,7 +428,7 @@ module.exports = class User {
     let body;
     let body_bak;
     body = await api({
-      url: `https://wq.jd.com/user_new/info/GetJDUserInfoUnion?orgFlag=JD_PinGou_New&callSource=mainorder&channel=4&isHomewhite=0&sceneval=2&_=${Date.now()}&sceneval=2&g_login_type=1&g_ty=ls`,
+      url: `https://me-api.jd.com/user_new/info/GetJDUserInfoUnion?orgFlag=JD_PinGou_New&callSource=mainorder&channel=4&isHomewhite=0&sceneval=2&_=${Date.now()}&sceneval=2&g_login_type=1&g_ty=ls`,
       headers: {
         Accept: '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -501,7 +501,7 @@ module.exports = class User {
   }
 //////////////////////////////////////////////
   async #getWSCKCheck() {
-    const s = await api({url: `https://api.jds.codes/jd/gentoken`}).json();
+    const s = await api({url: `https://pan.smxy.xyz/sign`}).json();
     const clientVersion = s['clientVersion']
     const client = s['client']
     const sv = s['sv']
