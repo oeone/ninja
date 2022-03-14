@@ -509,10 +509,10 @@ module.exports = class User {
         },
         body: 'body=%7B%22to%22%3A%20%22https%3A%2F%2Fplogin.m.jd.com%2Fjd-mlogin%2Fstatic%2Fhtml%2Fappjmp_blank.html%22%2C%22action%22%3A%20%22to%22%7D&client=android&clientVersion=10.3.5',
       }).json();
-    const data = s["data"]["sign"].split("&")
-    const clientVersion = data[3]
-    const client = data[2]
-    const uuid = data[1]
+    const data = s["data"]["sign"].split("&");
+    const clientVersion = data[3];
+    const client = data[2];
+    const uuid = data[1];
     const sign = data[4] + "&" + data[5] + "&" + data[6];
     if (!sv||!st||!uuid||!sign) {
       throw new UserError('获取签名失败，请等待Ninja修理 ！', 200, 200);
