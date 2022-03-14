@@ -506,7 +506,8 @@ module.exports = class User {
         method: 'POST',
         headers:{
           'Content-Type': 'application/json; charset=utf-8'
-        }
+        },
+        data = '{"body":"https%3a%2f%2fplogin.m.jd.com%2fjd-mlogin%2fstatic%2fhtml%2fappjmp_blank.html","version":"10.3.5","client":"android"}'
       }).json();
     const clientVersion = s[3]
     const client = s[2]
