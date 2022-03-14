@@ -509,18 +509,19 @@ module.exports = class User {
         },
         data: '{"body":"https%3a%2f%2fplogin.m.jd.com%2fjd-mlogin%2fstatic%2fhtml%2fappjmp_blank.html","version":"10.3.5","client":"android"}',
       }).json();
-    const clientVersion = s[3]
-    const client = s[2]
+    const data = s["data"]["sign"].split("&")
+    const clientVersion = data[3]
+    const client = data[2]
     const sv = '10.3.5';
     const st = 'android';
-    const uuid = s[1]
-    const sign = s[4] + "&" + s[5] + "&" + s[6];
+    const uuid = data[1]
+    const sign = data[4] + "&" + data[5] + "&" + data[6];
     if (!sv||!st||!uuid||!sign) {
       throw new UserError('获取签名失败，请等待Ninja修理 ！', 200, 200);
     }
     const body = await api({
       method: 'POST',
-      url: `https://api.m.jd.com/client.action?functionId=genToken&clientVersion=${clientVersion}&client=${client}&uuid=${uuid}&st=${st}&sign=${sign}&sv=${sv}`,
+      url: `https://api.m.jd.com/client.action?functionId=genToken&${clientVersion}&${client}&${uuid}&st=${st}&${sign}&sv=${sv}`,
       body: 'body=%7B%22action%22%3A%22to%22%2C%22to%22%3A%22https%253A%252F%252Fplogin.m.jd.com%252Fcgi-bin%252Fm%252Fthirdapp_auth_page%253Ftoken%253DAAEAIEijIw6wxF2s3bNKF0bmGsI8xfw6hkQT6Ui2QVP7z1Xg%2526client_type%253Dandroid%2526appid%253D879%2526appup_type%253D1%22%7D&',
       headers: {
         Cookie: this.jdwsck,
