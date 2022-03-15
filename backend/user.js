@@ -501,19 +501,26 @@ module.exports = class User {
   }
 //////////////////////////////////////////////
   async #getWSCKCheck() {
-    const s = await api({
-        url: `https://sign.666889.xyz/getCkSign`,
-        method: 'POST',
-        headers:{
-          'Content-Type': 'application/json; charset=utf-8'
-        },
-        data: {"body":"https%3a%2f%2fplogin.m.jd.com%2fjd-mlogin%2fstatic%2fhtml%2fappjmp_blank.html","version":"10.3.5","client":"android"},
-      }).json();
-    const data = s["data"]["sign"].split("&");
-    const clientVersion = data[3];
-    const client = data[2];
-    const uuid = data[1];
-    const sign = data[4] + "&" + data[5] + "&" + data[6];
+    // const s = await api({
+    //     url: `https://sign.666889.xyz/getCkSign`,
+    //     method: 'POST',
+    //     headers:{
+    //       'Content-Type': 'application/json; charset=utf-8'
+    //     },
+    //     data: {"body":"https%3a%2f%2fplogin.m.jd.com%2fjd-mlogin%2fstatic%2fhtml%2fappjmp_blank.html","version":"10.3.5","client":"android"},
+    //   }).json();
+    // const data = s["data"]["sign"].split("&");
+    // const clientVersion = data[3];
+    // const client = data[2];
+    // const uuid = data[1];
+    // const sign = data[4] + "&" + data[5] + "&" + data[6];
+    const s = await api({url: `https://api.jds.codes/jd/gentoken`}).json();
+    const clientVersion = s['clientVersion']
+    const client = s['client']
+    const sv = s['sv']
+    const st = s['st']
+    const uuid = s['uuid']
+    const sign = s['sign']
     if (!sv||!st||!uuid||!sign) {
       throw new UserError('获取签名失败，请等待Ninja修理 ！', 200, 200);
     }
