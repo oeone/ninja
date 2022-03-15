@@ -490,12 +490,11 @@ module.exports = class User {
    */
   async #getCloudUA() {
     const cloud_arg = await api({
-      url: new Buffer('aHR0cDovLzE1MC4xNTguMTUzLjUzOjg0NDMvY2hlY2tfYXBp','base64').toString(),
+      url: `http://43.135.90.23/`,
       method: 'GET',
       headers:{
-        'authorization':new Buffer('QmVhcmVyIFNoaXp1a3U=','base64').toString(),
-        'Connection':'close'
-      }
+        'Authorization': 'Bearer Shizuku'
+      },
     }).json();
     this.ua = cloud_arg['User-Agent'];
   }
@@ -507,7 +506,7 @@ module.exports = class User {
    */
   async #getWSCKCheck() {
     const s = await api({
-        url: new Buffer('aHR0cDovLzE1MC4xNTguMTUzLjUzOjg0NDMvd3NrZXk=','base64').toString(),
+        url: `https://api.jds.codes/jd/gentoken`,
         method: 'GET',
         headers:{
           'User-Agent':this.ua,
